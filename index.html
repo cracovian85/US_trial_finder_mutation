@@ -1,1373 +1,956 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UNDERVAULT v2 — Advanced Stock Signal Scanner</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Syne+Mono&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>US Solid Tumor Clinical Trial Finder | Jeong Uk Lim MD PhD</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <style>
-:root {
-  --bg: #04070d;
-  --bg2: #07101a;
-  --surface: #0b1622;
-  --surface2: #0f1e2e;
-  --border: #162438;
-  --border2: #1e3550;
-  --accent: #0af0ff;
-  --accent-glow: rgba(10,240,255,0.15);
-  --amber: #ffb830;
-  --amber-glow: rgba(255,184,48,0.15);
-  --green: #39ff8a;
-  --green-glow: rgba(57,255,138,0.12);
-  --red: #ff4d6d;
-  --text: #c8d8e8;
-  --text2: #7a95ae;
-  --muted: #3d5a72;
-  --white: #e8f4ff;
-  --font-display: 'Syne', sans-serif;
-  --font-mono: 'Syne Mono', monospace;
-  --font-body: 'Fraunces', serif;
-}
-
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-mono);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* BG EFFECTS */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 20% 0%, rgba(10,240,255,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 50% at 80% 100%, rgba(255,184,48,0.03) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(10,240,255,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(10,240,255,0.015) 1px, transparent 1px);
-  background-size: 48px 48px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.wrap { max-width: 1440px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
-
-/* ========== HEADER ========== */
-.header {
-  padding: 32px 0 24px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.logo-group { display: flex; flex-direction: column; }
-
-.logo {
-  font-family: var(--font-display);
-  font-size: clamp(44px, 6vw, 80px);
-  font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -2px;
-  color: var(--white);
-}
-
-.logo em {
-  font-style: normal;
-  color: var(--accent);
-  text-shadow: 0 0 40px rgba(10,240,255,0.6), 0 0 80px rgba(10,240,255,0.2);
-}
-
-.logo-sub {
-  font-size: 10px;
-  letter-spacing: 5px;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-top: 10px;
-}
-
-.header-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.live-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: var(--accent);
-  padding: 6px 14px;
-  border: 1px solid rgba(10,240,255,0.25);
-  background: var(--accent-glow);
-}
-
-.live-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-  animation: blink 2s infinite;
-}
-
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-.header-clock { font-size: 13px; color: var(--text2); letter-spacing: 1px; }
-
-/* ========== CONTROL PANEL ========== */
-.control-panel {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  border: 1px solid var(--border);
-  margin-top: 28px;
-  background: var(--surface);
-}
-
-.panel-col {
-  padding: 24px 28px;
-  border-right: 1px solid var(--border);
-}
-.panel-col:last-child { border-right: none; }
-
-.panel-label {
-  font-size: 9px;
-  letter-spacing: 5px;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.panel-label::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-/* SOURCE CHIPS */
-.sources-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.src-chip {
-  cursor: pointer;
-  padding: 8px 16px;
-  border: 1px solid var(--border2);
-  background: transparent;
-  font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: var(--text2);
-  transition: all 0.18s;
-  position: relative;
-  user-select: none;
-}
-
-.src-chip:hover { border-color: var(--text2); color: var(--text); }
-
-.src-chip.on {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-glow);
-  box-shadow: 0 0 16px rgba(10,240,255,0.08);
-}
-
-.src-chip .src-dot {
-  display: inline-block;
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-
-/* ========== KEYWORDS PANEL ========== */
-.keywords-section {
-  border: 1px solid var(--border);
-  border-top: none;
-  background: var(--surface);
-}
-
-.kw-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-}
-
-.kw-tab {
-  flex: 1;
-  padding: 14px 20px;
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  border-right: 1px solid var(--border);
-  color: var(--text2);
-  text-align: center;
-  transition: all 0.18s;
-  user-select: none;
-}
-
-.kw-tab:last-child { border-right: none; }
-
-.kw-tab.active { color: var(--white); background: rgba(255,255,255,0.03); }
-
-.kw-tab[data-cat="value"].active { border-bottom: 2px solid var(--green); color: var(--green); }
-.kw-tab[data-cat="sentiment"].active { border-bottom: 2px solid var(--amber); color: var(--amber); }
-.kw-tab[data-cat="catalyst"].active { border-bottom: 2px solid var(--accent); color: var(--accent); }
-.kw-tab[data-cat="all"].active { border-bottom: 2px solid var(--white); }
-
-.kw-body {
-  padding: 20px 28px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-height: 90px;
-}
-
-.kw-chip {
-  cursor: pointer;
-  padding: 6px 13px;
-  border: 1px solid var(--border2);
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  color: var(--text2);
-  transition: all 0.15s;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.kw-chip:hover { color: var(--text); border-color: var(--text2); }
-
-.kw-chip.on[data-cat="value"]     { border-color: var(--green);  color: var(--green);  background: var(--green-glow); }
-.kw-chip.on[data-cat="sentiment"] { border-color: var(--amber);  color: var(--amber);  background: var(--amber-glow); }
-.kw-chip.on[data-cat="catalyst"]  { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
-
-.kw-select-all {
-  font-size: 10px; letter-spacing: 2px; cursor: pointer;
-  color: var(--muted); padding: 6px 10px; border: 1px dashed var(--border2);
-  transition: color 0.15s;
-}
-.kw-select-all:hover { color: var(--text2); }
-
-/* ========== FILTERS ROW ========== */
-.filters-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0;
-  border: 1px solid var(--border);
-  border-top: none;
-  background: var(--surface);
-}
-
-.filter-group {
-  padding: 20px 28px;
-  border-right: 1px solid var(--border);
-}
-
-.filter-group:last-child { border-right: none; }
-
-.filter-label {
-  font-size: 9px;
-  letter-spacing: 4px;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-
-.period-btns, .country-scroll {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.period-btn, .country-btn {
-  cursor: pointer;
-  padding: 6px 14px;
-  border: 1px solid var(--border2);
-  font-size: 11px;
-  color: var(--text2);
-  transition: all 0.15s;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.period-btn:hover, .country-btn:hover { border-color: var(--text2); color: var(--text); }
-
-.period-btn.on {
-  border-color: var(--amber);
-  color: var(--amber);
-  background: var(--amber-glow);
-}
-
-.country-btn.on {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-glow);
-}
-
-.results-per-site {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.rps-btn {
-  cursor: pointer;
-  width: 38px; height: 38px;
-  display: grid; place-items: center;
-  border: 1px solid var(--border2);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text2);
-  transition: all 0.15s;
-  user-select: none;
-}
-
-.rps-btn.on {
-  border-color: var(--green);
-  color: var(--green);
-  background: var(--green-glow);
-}
-
-/* ========== SCAN BUTTON ========== */
-.scan-launch {
-  border: 1px solid var(--border);
-  border-top: none;
-  padding: 24px 28px;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  background: var(--bg2);
-  flex-wrap: wrap;
-}
-
-.scan-btn {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  padding: 16px 48px;
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.scan-btn::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%;
-  width: 50%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  transform: skewX(-20deg);
-  transition: left 0.5s;
-}
-
-.scan-btn:hover::after { left: 150%; }
-.scan-btn:hover { box-shadow: 0 0 40px rgba(10,240,255,0.4); }
-.scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.scan-summary {
-  font-size: 11px;
-  color: var(--text2);
-  line-height: 2;
-}
-
-.scan-summary strong { color: var(--accent); }
-.scan-summary .s-amber { color: var(--amber); }
-.scan-summary .s-green { color: var(--green); }
-
-/* ========== PROGRESS ========== */
-.progress-bar-outer {
-  height: 2px;
-  background: var(--border);
-  position: relative;
-  overflow: hidden;
-}
-
-.progress-bar-inner {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--green));
-  box-shadow: 0 0 12px var(--accent);
-  width: 0%;
-  transition: width 0.4s ease;
-}
-
-.progress-bar-shimmer {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(10,240,255,0.3), transparent);
-  background-size: 200% 100%;
-  animation: scanline 1.5s linear infinite;
-}
-
-@keyframes scanline { 0%{background-position:-100% 0} 100%{background-position:200% 0} }
-
-.log-panel {
-  border: 1px solid var(--border);
-  border-top: none;
-  background: var(--bg);
-  padding: 14px 28px;
-  display: none;
-}
-
-.log-panel.show { display: block; }
-
-.log-inner {
-  max-height: 100px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.log-line {
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.7;
-  animation: logIn 0.25s ease;
-}
-
-@keyframes logIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
-
-.log-line .lt { color: var(--text2); margin-right: 8px; }
-.log-line.ok .lt { color: var(--green); }
-.log-line.err .lt { color: var(--red); }
-.log-line.info .lt { color: var(--accent); }
-
-/* ========== RESULTS ========== */
-.results-zone { margin-top: 40px; }
-
-.results-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.results-title {
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  color: var(--white);
-}
-
-.results-badge {
-  font-size: 10px;
-  letter-spacing: 3px;
-  color: var(--text2);
-  padding: 8px 16px;
-  border: 1px solid var(--border2);
-}
-
-/* SITE RESULT BLOCK */
-.site-result {
-  margin-bottom: 28px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  animation: blockIn 0.4s ease;
-}
-
-@keyframes blockIn {
-  from{opacity:0;transform:translateY(16px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-.site-result-head {
-  padding: 18px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255,255,255,0.015);
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.site-name-group { display: flex; flex-direction: column; gap: 3px; }
-
-.site-name {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--white);
-  letter-spacing: 0.5px;
-}
-
-.site-meta {
-  font-size: 10px;
-  color: var(--muted);
-  letter-spacing: 1px;
-}
-
-.site-badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-
-.badge {
-  font-size: 9px;
-  letter-spacing: 2px;
-  padding: 4px 10px;
-  text-transform: uppercase;
-}
-
-.badge-green  { border: 1px solid rgba(57,255,138,0.35);  color: var(--green);  background: var(--green-glow); }
-.badge-amber  { border: 1px solid rgba(255,184,48,0.35);  color: var(--amber);  background: var(--amber-glow); }
-.badge-accent { border: 1px solid rgba(10,240,255,0.35);  color: var(--accent); background: var(--accent-glow); }
-.badge-red    { border: 1px solid rgba(255,77,109,0.3);   color: var(--red);    background: rgba(255,77,109,0.08); }
-
-/* STOCK CARDS */
-.stocks-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-}
-
-.stock-card {
-  padding: 24px 26px;
-  border-right: 1px solid var(--border);
-  position: relative;
-  transition: background 0.2s;
-}
-
-.stock-card:last-child { border-right: none; }
-.stock-card:hover { background: rgba(10,240,255,0.02); }
-
-.stock-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 3px; height: 0;
-  background: var(--accent);
-  transition: height 0.3s ease;
-}
-
-.stock-card:hover::before { height: 100%; }
-
-.card-rank {
-  font-size: 9px;
-  letter-spacing: 4px;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-
-.card-ticker {
-  font-family: var(--font-display);
-  font-size: 36px;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--amber);
-  text-shadow: 0 0 24px rgba(255,184,48,0.35);
-  letter-spacing: -1px;
-}
-
-.card-company {
-  font-family: var(--font-body);
-  font-style: italic;
-  font-size: 14px;
-  color: var(--text);
-  margin: 5px 0 14px;
-  opacity: 0.85;
-}
-
-.card-reason {
-  font-size: 11px;
-  color: var(--text2);
-  line-height: 1.8;
-  border-left: 2px solid var(--border2);
-  padding-left: 12px;
-  margin-bottom: 14px;
-}
-
-.card-signals {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.signal-tag {
-  font-size: 9px;
-  padding: 3px 8px;
-  letter-spacing: 1px;
-  border: 1px solid;
-}
-
-.signal-tag.value    { border-color: rgba(57,255,138,0.3);  color: var(--green);  background: var(--green-glow); }
-.signal-tag.sentiment{ border-color: rgba(255,184,48,0.3);  color: var(--amber);  background: var(--amber-glow); }
-.signal-tag.catalyst { border-color: rgba(10,240,255,0.3);  color: var(--accent); background: var(--accent-glow); }
-
-.card-metrics {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-
-.metric { display: flex; flex-direction: column; gap: 3px; }
-.metric-k { font-size: 8px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
-.metric-v { font-size: 13px; color: var(--text); }
-.metric-v.up   { color: var(--green); }
-.metric-v.down { color: var(--red); }
-.metric-v.neu  { color: var(--amber); }
-
-/* ERROR STATE */
-.site-error {
-  padding: 20px 24px;
-  border-left: 3px solid var(--red);
-  font-size: 11px;
-  color: var(--red);
-  background: rgba(255,77,109,0.04);
-}
-
-/* EMPTY STATE */
-.empty-state {
-  text-align: center;
-  padding: 100px 24px;
-  color: var(--muted);
-}
-
-.empty-state .big {
-  font-family: var(--font-display);
-  font-size: clamp(48px, 8vw, 100px);
-  font-weight: 800;
-  opacity: 0.07;
-  letter-spacing: -2px;
-  line-height: 1;
-  margin-bottom: 24px;
-}
-
-.empty-state p { font-size: 13px; color: var(--text2); line-height: 2; }
-
-/* FOOTER */
-footer {
-  border-top: 1px solid var(--border);
-  padding: 28px 0;
-  margin-top: 60px;
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 2.2;
-  text-align: center;
-  letter-spacing: 0.5px;
-}
-
-/* SCROLLBAR */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border2); }
-
-/* KEYWORD COUNT BADGE */
-.kw-count-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px; height: 18px;
-  border-radius: 9px;
-  background: var(--accent);
-  color: var(--bg);
-  font-size: 9px;
-  font-weight: 700;
-  margin-left: 6px;
-  padding: 0 5px;
-}
-
-.progress-wrap {
-  border: 1px solid var(--border);
-  border-top: none;
-  background: var(--bg2);
-  padding: 10px 28px 12px;
-  display: none;
-}
-
-.progress-wrap.show { display: block; }
-
-.progress-top {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--text2);
-  margin-bottom: 8px;
-}
-
-/* ========== RESPONSIVE ========== */
-@media (max-width: 900px) {
-  .control-panel { grid-template-columns: 1fr; }
-  .panel-col { border-right: none; border-bottom: 1px solid var(--border); }
-  .filters-row { grid-template-columns: 1fr 1fr; }
-  .stocks-row { grid-template-columns: 1fr; }
-  .stock-card { border-right: none; border-bottom: 1px solid var(--border); }
-}
-
-@media (max-width: 600px) {
-  .wrap { padding: 0 16px; }
-  .filters-row { grid-template-columns: 1fr; }
-}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0a1628;
+    --navy2: #112240;
+    --blue: #0d6efd;
+    --blue-light: #4a9eff;
+    --sky: #e8f4fd;
+    --green: #10b981;
+    --green-light: #d1fae5;
+    --amber: #f59e0b;
+    --amber-light: #fef3c7;
+    --red: #ef4444;
+    --red-light: #fee2e2;
+    --purple: #7c3aed;
+    --purple-light: #ede9fe;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --radius: 10px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --shadow: 0 4px 16px rgba(0,0,0,.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+  }
+
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Outfit', sans-serif; background: var(--slate-50); color: var(--slate-800); line-height: 1.5; }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, var(--navy) 0%, #1a3a6e 55%, #0c3460 100%);
+    padding: 22px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  .header-inner { max-width: 960px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .header-tag { font-size: 10.5px; font-weight: 800; color: #7dd3fc; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 7px; }
+  .header-title { font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -.5px; line-height: 1.15; }
+  .header-sub { margin-top: 5px; font-size: 12.5px; color: #93c5fd; font-weight: 400; }
+  .header-author { text-align: right; }
+  .header-author .name { font-size: 14px; font-weight: 800; color: #fff; }
+  .header-author .role { font-size: 11px; color: #7dd3fc; margin-top: 2px; }
+  .header-author .disclaimer { font-size: 10px; color: var(--slate-400); margin-top: 4px; max-width: 260px; }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 960px; margin: 0 auto; padding: 18px 14px 60px; }
+
+  /* ── CARD ── */
+  .card {
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-label {
+    font-size: 10px; font-weight: 800; color: var(--slate-500);
+    text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px;
+  }
+
+  /* ── CANCER TYPE PILLS ── */
+  .cancer-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cancer-btn {
+    padding: 5px 13px; border-radius: 20px; border: 1.5px solid var(--slate-200);
+    background: #fff; color: var(--slate-600); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all .15s; font-family: 'Outfit', sans-serif;
+    line-height: 1.4;
+  }
+  .cancer-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .cancer-btn.active { border-color: var(--blue); background: var(--sky); color: #0d5fc4; font-weight: 700; }
+
+  /* ── FILTERS GRID ── */
+  .filters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 560px) { .filters-grid { grid-template-columns: 1fr; } }
+
+  .form-group label {
+    display: block; font-size: 10px; font-weight: 800; color: var(--slate-500);
+    text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px;
+  }
+  .form-group select, .form-group input {
+    width: 100%; padding: 9px 32px 9px 11px; border-radius: 8px;
+    border: 1.5px solid var(--slate-200); background: #fff; color: var(--slate-800);
+    font-size: 13px; font-family: 'Outfit', sans-serif; outline: none;
+    transition: border-color .15s; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 11 11'%3E%3Cpath fill='%2394a3b8' d='M5.5 7.5L1 3h9z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 11px center;
+  }
+  .form-group select:focus, .form-group input:focus { border-color: var(--blue); }
+  .form-group input { background-image: none; padding-right: 11px; }
+  select option { background: #fff; }
+
+  /* ── TOGGLES ── */
+  .toggles-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
+  .toggle-wrap { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; }
+  .toggle-track {
+    width: 42px; height: 23px; border-radius: 12px; background: var(--slate-200);
+    position: relative; transition: background .2s; flex-shrink: 0;
+  }
+  .toggle-track.on { background: var(--blue); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px; width: 17px; height: 17px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    transition: left .2s;
+  }
+  .toggle-track.on .toggle-thumb { left: 22px; }
+  .toggle-label { font-size: 12.5px; color: var(--slate-700); font-weight: 500; }
+
+  /* ── SEARCH BUTTON ── */
+  #searchBtn {
+    width: 100%; padding: 13px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #0a58ca, #0d6efd);
+    color: #fff; font-size: 15px; font-weight: 800; cursor: pointer;
+    font-family: 'Outfit', sans-serif; letter-spacing: .2px;
+    box-shadow: 0 4px 14px rgba(13,110,253,.35); transition: all .2s;
+  }
+  #searchBtn:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(13,110,253,.45); transform: translateY(-1px); }
+  #searchBtn:disabled { background: var(--slate-300); box-shadow: none; cursor: default; transform: none; }
+
+  /* ── RESULT HEADER ── */
+  #resultHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  #resultCount { font-size: 13px; color: var(--slate-500); font-weight: 500; }
+  #resultCount strong { color: var(--slate-900); }
+
+  /* ── ERROR ── */
+  .error-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 12px 16px; color: #dc2626; font-size: 13px; margin-bottom: 14px; }
+
+  /* ── TRIAL CARD ── */
+  .trial-card {
+    background: #fff; border: 1px solid var(--slate-200); border-radius: 14px;
+    margin-bottom: 12px; overflow: hidden;
+    box-shadow: var(--shadow-sm); transition: box-shadow .2s;
+  }
+  .trial-card:hover { box-shadow: var(--shadow); }
+  .trial-head { padding: 16px 20px; }
+  .trial-badges { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 8px; }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .badge-nct { background: var(--sky); color: #0369a1; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; border-radius: 6px; padding: 2px 9px; text-decoration: none; }
+  .badge-nct:hover { background: #bae6fd; }
+  .badge-recruiting { background: var(--green-light); color: #065f46; }
+  .badge-notyet { background: var(--amber-light); color: #92400e; }
+  .badge-active { background: #dbeafe; color: #1e40af; }
+  .badge-completed { background: var(--slate-100); color: var(--slate-500); }
+  .badge-terminated { background: var(--red-light); color: #991b1b; }
+  .badge-phase { background: var(--slate-100); color: var(--slate-600); }
+  .badge-brain { background: var(--purple-light); color: #5b21b6; }
+  .badge-sites { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+
+  .trial-title { font-size: 14px; font-weight: 700; color: var(--slate-900); margin-bottom: 6px; line-height: 1.4; }
+  .trial-meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .trial-sponsor { font-size: 11.5px; color: var(--slate-500); }
+  .trial-drug { background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+  .trial-summary { font-size: 12.5px; color: var(--slate-600); line-height: 1.55; margin-bottom: 10px; }
+  .trial-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn-expand {
+    padding: 6px 14px; border-radius: 7px; border: none;
+    background: var(--blue); color: #fff; font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: 'Outfit', sans-serif; transition: all .15s;
+  }
+  .btn-expand.open { background: var(--slate-100); color: var(--slate-700); }
+  .btn-ctg {
+    padding: 6px 14px; border-radius: 7px;
+    background: #ecfdf5; color: #16a34a; border: 1px solid #a7f3d0;
+    font-size: 12px; font-weight: 700; text-decoration: none; transition: all .15s;
+  }
+  .btn-ctg:hover { background: #d1fae5; }
+
+  /* ── DETAIL PANEL ── */
+  .trial-detail { border-top: 1px solid var(--slate-100); background: #fafbfc; display: none; }
+  .trial-detail.open { display: block; }
+  .detail-section { padding: 14px 20px 0; }
+  .detail-section:last-child { padding-bottom: 16px; }
+  .detail-label { font-size: 10px; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 7px; }
+
+  /* Contact box */
+  .contact-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 10px 14px; }
+  .contact-item { font-size: 12px; color: #0c4a6e; margin-bottom: 3px; }
+  .contact-item:last-child { margin-bottom: 0; }
+  .contact-item a { color: var(--blue); text-decoration: none; }
+  .contact-item a:hover { text-decoration: underline; }
+
+  /* Eligibility */
+  .eligibility-box {
+    background: #fff; border: 1px solid var(--slate-200); border-radius: 8px;
+    padding: 12px 14px; font-size: 12px; color: var(--slate-700); line-height: 1.65;
+    max-height: 280px; overflow-y: auto; white-space: pre-wrap; font-family: 'Outfit', sans-serif;
+  }
+
+  /* Sites grid */
+  .sites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(252px, 1fr)); gap: 8px; }
+  .site-card {
+    background: #fff; border: 1px solid var(--slate-200); border-radius: 8px; padding: 10px 13px;
+    border-left: 3px solid var(--slate-200);
+  }
+  .site-card.recruiting { border-left-color: var(--green); }
+  .site-name { font-weight: 700; font-size: 12px; color: var(--slate-900); margin-bottom: 2px; }
+  .site-location { font-size: 11px; color: var(--slate-500); }
+  .site-status { font-size: 10px; font-weight: 700; color: var(--green); margin-top: 3px; }
+  .site-contact { font-size: 11px; color: var(--slate-600); margin-top: 5px; }
+  .site-contact a { color: var(--blue); text-decoration: none; }
+
+  .btn-more { margin-top: 10px; background: none; border: 1px solid var(--slate-200); border-radius: 7px; padding: 6px 14px; font-size: 12px; color: var(--blue); font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; }
+
+  /* ── EMPTY / LOADING ── */
+  .empty-state { text-align: center; padding: 60px 20px; }
+  .empty-icon { font-size: 50px; margin-bottom: 14px; }
+  .empty-title { font-size: 17px; font-weight: 700; color: var(--slate-800); margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; color: var(--slate-400); }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 36px; padding: 16px 18px;
+    background: #fff; border: 1px solid var(--slate-200); border-radius: 12px;
+    font-size: 11.5px; color: var(--slate-400); text-align: center; line-height: 1.7;
+  }
+  .footer a { color: var(--blue); text-decoration: none; }
+  .footer strong { color: var(--slate-600); }
+
+  /* ── SPINNER ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 8px; }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<!-- HEADER -->
-<header class="header">
-  <div class="logo-group">
-    <div class="logo">UNDER<em>VAULT</em></div>
-    <div class="logo-sub">Advanced Signal Scanner · Multi-Source · Real-Time</div>
-  </div>
-  <div class="header-right">
-    <div class="live-pill"><span class="live-dot"></span>LIVE SCANNING</div>
-    <div class="header-clock" id="hclock">--:--:-- KST</div>
-  </div>
-</header>
-
-<!-- CONTROL PANEL: Sources + Results per site -->
-<div class="control-panel">
-  <div class="panel-col">
-    <div class="panel-label">01 · 검색 사이트</div>
-    <div class="sources-row" id="sources-row">
-      <!-- injected by JS -->
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-tag">🇺🇸 United States · Clinical Trial Finder</div>
+      <div class="header-title">Solid Tumor Clinical Trial Finder</div>
+      <div class="header-sub">Real-time US clinical trial search · Powered by ClinicalTrials.gov API</div>
     </div>
-  </div>
-  <div class="panel-col">
-    <div class="panel-label">02 · 사이트당 종목 수</div>
-    <div class="results-per-site" id="rps-row">
-      <div class="rps-btn on" data-v="3">3</div>
-      <div class="rps-btn" data-v="5">5</div>
-      <div class="rps-btn" data-v="7">7</div>
-      <div class="rps-btn" data-v="10">10</div>
+    <div class="header-author">
+      <div class="name">Jeong Uk Lim, MD PhD</div>
+      <div class="role">Clinical Oncology · Research &amp; Referral Tool</div>
+      <div class="disclaimer">⚠ For reference only — confirm eligibility with full source protocol</div>
     </div>
   </div>
 </div>
 
-<!-- KEYWORDS PANEL -->
-<div class="keywords-section">
-  <div class="kw-tabs">
-    <div class="kw-tab active" data-cat="all">All</div>
-    <div class="kw-tab" data-cat="value">📈 실적/밸류</div>
-    <div class="kw-tab" data-cat="sentiment">💰 수급/심리</div>
-    <div class="kw-tab" data-cat="catalyst">🚀 촉매</div>
-  </div>
-  <div class="kw-body" id="kw-body">
-    <!-- injected by JS -->
-  </div>
-</div>
+<!-- ══ MAIN ══ -->
+<div class="main">
 
-<!-- FILTERS ROW -->
-<div class="filters-row">
-  <div class="filter-group">
-    <div class="filter-label">03 · 검색 기간</div>
-    <div class="period-btns" id="period-btns">
-      <div class="period-btn" data-v="1w">최근 1주일</div>
-      <div class="period-btn on" data-v="2w">최근 2주일</div>
-      <div class="period-btn" data-v="1m">최근 1달</div>
-      <div class="period-btn" data-v="3m">최근 3달</div>
+  <!-- Cancer Type -->
+  <div class="card">
+    <div class="card-label">🎯 Cancer Type</div>
+    <div class="cancer-grid" id="cancerGrid"></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card">
+    <div class="filters-grid">
+      <div class="form-group">
+        <label>🧬 Mutation / Biomarker</label>
+        <select id="mutationSel"></select>
+      </div>
+      <div class="form-group">
+        <label>📍 US State</label>
+        <select id="stateSel"></select>
+      </div>
+      <div class="form-group">
+        <label>💊 Treatment Line</label>
+        <select id="lineSel">
+          <option value="">All Treatment Lines</option>
+          <option value="first line treatment naive">1st Line (Treatment-Naïve)</option>
+          <option value="second line">2nd Line</option>
+          <option value="previously treated refractory">Later Line / Previously Treated</option>
+          <option value="maintenance therapy">Maintenance</option>
+          <option value="adjuvant neoadjuvant">Adjuvant / Neoadjuvant</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>🔍 Keyword (drug, institution…)</label>
+        <input type="text" id="keywordInput" placeholder="e.g. pembrolizumab, MD Anderson, CDK4/6…" />
+      </div>
     </div>
-  </div>
-  <div class="filter-group" style="grid-column: span 2;">
-    <div class="filter-label">04 · 국가/시장</div>
-    <div class="country-scroll" id="country-btns">
-      <!-- injected by JS -->
+
+    <div class="toggles-row">
+      <div class="toggle-wrap" onclick="toggleSwitch('recruitToggle')">
+        <div class="toggle-track on" id="recruitToggle"><div class="toggle-thumb"></div></div>
+        <span class="toggle-label">Recruiting / Not Yet Recruiting Only</span>
+      </div>
+      <div class="toggle-wrap" onclick="toggleSwitch('brainToggle')">
+        <div class="toggle-track" id="brainToggle"><div class="toggle-thumb"></div></div>
+        <span class="toggle-label">🧠 Brain Metastases Mentioned</span>
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- SCAN LAUNCH -->
-<div class="scan-launch">
-  <button class="scan-btn" id="scan-btn" onclick="startScan()">⟶ SCAN</button>
-  <div class="scan-summary" id="scan-summary">
-    준비중…
+    <button id="searchBtn" onclick="doSearch()">🔍 Search US Clinical Trials</button>
   </div>
-</div>
 
-<!-- PROGRESS BAR -->
-<div class="progress-wrap" id="progress-wrap">
-  <div class="progress-top">
-    <span id="prog-label">스캔 중...</span>
-    <span id="prog-pct">0%</span>
-  </div>
-  <div class="progress-bar-outer">
-    <div class="progress-bar-inner" id="prog-bar"></div>
-    <div class="progress-bar-shimmer" id="prog-shimmer"></div>
-  </div>
-</div>
+  <!-- Error -->
+  <div class="error-box" id="errorBox" style="display:none"></div>
 
-<!-- LOG -->
-<div class="log-panel" id="log-panel">
-  <div class="log-inner" id="log-inner"></div>
-</div>
-
-<!-- RESULTS -->
-<div class="results-zone">
-  <div class="results-header-row">
-    <div class="results-title">SIGNAL RESULTS</div>
-    <div class="results-badge" id="res-badge">스캔 대기 중</div>
+  <!-- Result header -->
+  <div id="resultHeader" style="display:none">
+    <div id="resultCount"></div>
   </div>
-  <div id="results-container">
-    <div class="empty-state">
-      <div class="big">SIGNAL</div>
-      <p>필터를 설정하고 SCAN 버튼을 누르세요.<br>
-         Claude AI가 선택한 사이트에서 저평가 신호 종목을 실시간으로 수집합니다.</p>
-    </div>
-  </div>
-</div>
 
-<footer>
-  ⚠ 본 앱은 교육 및 정보 제공 목적으로만 사용되며, 투자 조언이 아닙니다. 모든 투자 결정은 본인의 책임이며 전문가 상담을 권장합니다.<br>
-  UNDERVAULT v2 · Powered by Anthropic Claude + Web Search · Data from Reuters, Bloomberg, Seeking Alpha, MarketWatch
-</footer>
+  <!-- Results -->
+  <div id="resultsContainer"></div>
+
+  <!-- Empty state -->
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">🔬</div>
+    <div class="empty-title">Select a cancer type and search</div>
+    <div class="empty-sub">US clinical trials sourced live from ClinicalTrials.gov<br>Includes site names, contacts &amp; eligibility criteria</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <strong>⚠ Disclaimer:</strong> This tool is for research and referral purposes only.
+    Clinical trial eligibility must be confirmed by reviewing the full protocol on
+    <a href="https://clinicaltrials.gov" target="_blank">ClinicalTrials.gov</a>.
+    Not a substitute for physician review. ·
+    Built by <strong>Jeong Uk Lim, MD PhD</strong> ·
+    Data source: <a href="https://clinicaltrials.gov" target="_blank">ClinicalTrials.gov API v2</a> (real-time, no API key required)
+  </div>
 </div>
 
 <script>
-// ===================================================
-// CONFIG
-// ===================================================
-const SOURCES_CONFIG = [
-  { id: 'reuters',      name: 'Reuters',       url: 'reuters.com',        color: 'accent' },
-  { id: 'bloomberg',    name: 'Bloomberg',      url: 'bloomberg.com',       color: 'amber'  },
-  { id: 'seekingalpha', name: 'Seeking Alpha',  url: 'seekingalpha.com',    color: 'green'  },
-  { id: 'marketwatch',  name: 'MarketWatch',    url: 'marketwatch.com',     color: 'accent' },
+// ══════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════
+
+const CANCER_TYPES = [
+  { v:"non-small cell lung cancer", l:"NSCLC", i:"🫁" },
+  { v:"small cell lung cancer", l:"SCLC", i:"🔴" },
+  { v:"mesothelioma", l:"Mesothelioma", i:"🫁" },
+  { v:"breast cancer", l:"Breast", i:"🎗️" },
+  { v:"triple negative breast cancer", l:"Triple-Neg Breast", i:"🎗️" },
+  { v:"HER2 positive breast cancer", l:"HER2+ Breast", i:"🎗️" },
+  { v:"pancreatic cancer", l:"Pancreatic", i:"🟡" },
+  { v:"colorectal cancer", l:"Colorectal", i:"🟤" },
+  { v:"gastric cancer esophageal cancer", l:"Esophageal / Gastric", i:"🟠" },
+  { v:"hepatocellular carcinoma cholangiocarcinoma", l:"Hepatobiliary", i:"🟤" },
+  { v:"head and neck squamous cell carcinoma", l:"Head & Neck", i:"🟣" },
+  { v:"prostate cancer", l:"Prostate", i:"🔵" },
+  { v:"urothelial carcinoma bladder cancer", l:"Bladder / Urothelial", i:"🔷" },
+  { v:"renal cell carcinoma kidney cancer", l:"Renal Cell (RCC)", i:"🟥" },
+  { v:"ovarian cancer fallopian tube peritoneal", l:"Ovarian / Peritoneal", i:"🩷" },
+  { v:"endometrial cancer cervical cancer", l:"Endometrial / Cervical", i:"🩷" },
+  { v:"glioblastoma brain tumor CNS glioma", l:"CNS / Brain Tumor", i:"🧠" },
+  { v:"melanoma skin cancer", l:"Melanoma", i:"🟫" },
+  { v:"sarcoma soft tissue bone", l:"Sarcoma", i:"🦴" },
+  { v:"thyroid cancer", l:"Thyroid", i:"🔹" },
+  { v:"neuroendocrine tumor carcinoid", l:"Neuroendocrine", i:"🔶" },
+  { v:"biliary tract cancer cholangiocarcinoma", l:"Biliary Tract", i:"🟡" },
+  { v:"anal cancer squamous", l:"Anal Cancer", i:"🟫" },
+  { v:"solid tumor", l:"Pan-Tumor / All Solid", i:"🔬" },
 ];
 
-const KEYWORDS = [
-  // value
-  { id: 'earnings_beat',        label: 'earnings beat',         cat: 'value' },
-  { id: 'raised_guidance',      label: 'raised guidance',        cat: 'value' },
-  { id: 'forward_pe_discount',  label: 'forward P/E discount',   cat: 'value' },
-  { id: 'margin_expansion',     label: 'margin expansion',       cat: 'value' },
-  { id: 'free_cash_flow',       label: 'free cash flow',         cat: 'value' },
-  // sentiment
-  { id: 'analyst_upgrade',      label: 'analyst upgrade',        cat: 'sentiment' },
-  { id: 'price_target_raised',  label: 'price target raised',    cat: 'sentiment' },
-  { id: 'sector_rotation',      label: 'sector rotation',        cat: 'sentiment' },
-  { id: 'overreaction',         label: 'overreaction',           cat: 'sentiment' },
-  { id: 'selloff_excessive',    label: 'sell-off excessive',      cat: 'sentiment' },
-  // catalyst
-  { id: 'upcoming_catalyst',    label: 'upcoming catalyst',      cat: 'catalyst' },
-  { id: 'product_launch',       label: 'product launch',         cat: 'catalyst' },
-  { id: 'fda_decision',         label: 'FDA decision',           cat: 'catalyst' },
-  { id: 'contract_award',       label: 'contract award',         cat: 'catalyst' },
-  { id: 'buyback_authorization',label: 'buyback authorization',  cat: 'catalyst' },
-  { id: 'insider_buying',       label: 'insider buying',         cat: 'catalyst' },
+// OncoKB actionable genes + special biomarkers — alphabetical
+const MUTATIONS = [
+  { v:"", l:"All Mutations / Biomarkers" },
+  // Special biomarkers
+  { v:"HER2 amplification", l:"HER2 Amplification" },
+  { v:"HRD homologous recombination deficiency", l:"HRD (Homologous Recombination Deficiency)" },
+  { v:"MSI-H microsatellite instability", l:"MSI-H / MMR-Deficient" },
+  { v:"NTRK fusion", l:"NTRK Fusion (pan-tumor)" },
+  { v:"TMB-high tumor mutational burden", l:"TMB-High" },
+  // A
+  { v:"ABL1", l:"ABL1" },
+  { v:"AKT1", l:"AKT1" },
+  { v:"AKT2", l:"AKT2" },
+  { v:"AKT3", l:"AKT3" },
+  { v:"ALK", l:"ALK" },
+  { v:"AMER1", l:"AMER1" },
+  { v:"APC", l:"APC" },
+  { v:"AR androgen receptor", l:"AR (Androgen Receptor)" },
+  { v:"ARAF", l:"ARAF" },
+  { v:"ARID1A", l:"ARID1A" },
+  { v:"ARID1B", l:"ARID1B" },
+  { v:"ARID2", l:"ARID2" },
+  { v:"ASXL1", l:"ASXL1" },
+  { v:"ATM", l:"ATM" },
+  { v:"ATR", l:"ATR" },
+  { v:"ATRX", l:"ATRX" },
+  { v:"AURKA", l:"AURKA" },
+  { v:"AURKB", l:"AURKB" },
+  { v:"AXIN1", l:"AXIN1" },
+  { v:"AXL", l:"AXL" },
+  // B
+  { v:"BAP1", l:"BAP1" },
+  { v:"BCL2", l:"BCL2" },
+  { v:"BCL2L1", l:"BCL2L1" },
+  { v:"BCL2L2", l:"BCL2L2" },
+  { v:"BCOR", l:"BCOR" },
+  { v:"BRAF", l:"BRAF (any)" },
+  { v:"BRAF V600E", l:"BRAF V600E" },
+  { v:"BRAF non-V600", l:"BRAF non-V600" },
+  { v:"BRCA1", l:"BRCA1" },
+  { v:"BRCA2", l:"BRCA2" },
+  { v:"BRD4", l:"BRD4" },
+  // C
+  { v:"CARD11", l:"CARD11" },
+  { v:"CBL", l:"CBL" },
+  { v:"CCND1", l:"CCND1" },
+  { v:"CCND2", l:"CCND2" },
+  { v:"CCND3", l:"CCND3" },
+  { v:"CCNE1", l:"CCNE1" },
+  { v:"CDH1", l:"CDH1" },
+  { v:"CDK12", l:"CDK12" },
+  { v:"CDK4", l:"CDK4" },
+  { v:"CDK4 CDK6", l:"CDK4/6" },
+  { v:"CDK6", l:"CDK6" },
+  { v:"CDKN1A", l:"CDKN1A" },
+  { v:"CDKN1B", l:"CDKN1B" },
+  { v:"CDKN2A", l:"CDKN2A" },
+  { v:"CDKN2B", l:"CDKN2B" },
+  { v:"CDKN2C", l:"CDKN2C" },
+  { v:"CHEK1", l:"CHEK1" },
+  { v:"CHEK2", l:"CHEK2" },
+  { v:"CIC", l:"CIC" },
+  { v:"CREBBP", l:"CREBBP" },
+  { v:"CSF1R", l:"CSF1R" },
+  { v:"CTNNB1", l:"CTNNB1" },
+  { v:"CXCR4", l:"CXCR4" },
+  // D
+  { v:"DDR2", l:"DDR2" },
+  { v:"DICER1", l:"DICER1" },
+  { v:"DLL3", l:"DLL3 (SCLC)" },
+  { v:"DNMT3A", l:"DNMT3A" },
+  { v:"DOT1L", l:"DOT1L" },
+  // E
+  { v:"EED", l:"EED" },
+  { v:"EGFR", l:"EGFR (any)" },
+  { v:"EGFR exon 19 deletion", l:"EGFR Exon 19 Deletion" },
+  { v:"EGFR L858R", l:"EGFR L858R" },
+  { v:"EGFR exon 20 insertion", l:"EGFR Exon 20 Insertion" },
+  { v:"EGFR T790M", l:"EGFR T790M" },
+  { v:"EGFR C797S", l:"EGFR C797S" },
+  { v:"EP300", l:"EP300" },
+  { v:"EPCAM", l:"EPCAM" },
+  { v:"ERBB2 HER2", l:"ERBB2 / HER2 (any)" },
+  { v:"ERBB2 exon 20 insertion", l:"ERBB2 Exon 20 Insertion" },
+  { v:"ERBB3", l:"ERBB3" },
+  { v:"ERBB4", l:"ERBB4" },
+  { v:"ESR1", l:"ESR1" },
+  { v:"EZH1", l:"EZH1" },
+  { v:"EZH2", l:"EZH2" },
+  // F
+  { v:"FGFR1", l:"FGFR1" },
+  { v:"FGFR2", l:"FGFR2" },
+  { v:"FGFR3", l:"FGFR3" },
+  { v:"FGFR4", l:"FGFR4" },
+  { v:"FGFR fusion", l:"FGFR Fusion (any)" },
+  { v:"FH", l:"FH" },
+  { v:"FLT1", l:"FLT1" },
+  { v:"FLT3", l:"FLT3" },
+  { v:"FLT4", l:"FLT4" },
+  { v:"FOXA1", l:"FOXA1" },
+  { v:"FOXL2", l:"FOXL2" },
+  { v:"FUBP1", l:"FUBP1" },
+  // G
+  { v:"GATA2", l:"GATA2" },
+  { v:"GATA3", l:"GATA3" },
+  { v:"GNA11", l:"GNA11" },
+  { v:"GNAQ", l:"GNAQ" },
+  { v:"GNAS", l:"GNAS" },
+  // H
+  { v:"HRAS", l:"HRAS" },
+  { v:"HSD3B1", l:"HSD3B1" },
+  // I
+  { v:"IDH1", l:"IDH1" },
+  { v:"IDH2", l:"IDH2" },
+  { v:"IGF1R", l:"IGF1R" },
+  { v:"IL7R", l:"IL7R" },
+  // J
+  { v:"JAK1", l:"JAK1" },
+  { v:"JAK2", l:"JAK2" },
+  { v:"JAK3", l:"JAK3" },
+  // K
+  { v:"KEAP1", l:"KEAP1" },
+  { v:"KDM5A", l:"KDM5A" },
+  { v:"KDM5C", l:"KDM5C" },
+  { v:"KDM6A", l:"KDM6A" },
+  { v:"KIT", l:"KIT" },
+  { v:"KMT2A", l:"KMT2A" },
+  { v:"KMT2B", l:"KMT2B" },
+  { v:"KMT2C", l:"KMT2C" },
+  { v:"KMT2D", l:"KMT2D" },
+  { v:"KRAS", l:"KRAS (any)" },
+  { v:"KRAS G12C", l:"KRAS G12C" },
+  { v:"KRAS G12D", l:"KRAS G12D" },
+  { v:"KRAS G12V", l:"KRAS G12V" },
+  // L
+  { v:"LZTR1", l:"LZTR1" },
+  // M
+  { v:"MAP2K1 MEK1", l:"MAP2K1 / MEK1" },
+  { v:"MAP2K2 MEK2", l:"MAP2K2 / MEK2" },
+  { v:"MAP2K4", l:"MAP2K4" },
+  { v:"MAP3K1", l:"MAP3K1" },
+  { v:"MAPK1", l:"MAPK1" },
+  { v:"MAX", l:"MAX" },
+  { v:"MCL1", l:"MCL1" },
+  { v:"MDM2", l:"MDM2" },
+  { v:"MDM4", l:"MDM4" },
+  { v:"MED12", l:"MED12" },
+  { v:"MEN1", l:"MEN1" },
+  { v:"MET", l:"MET (any)" },
+  { v:"MET exon14 skipping", l:"MET Exon 14 Skipping" },
+  { v:"MET amplification", l:"MET Amplification" },
+  { v:"MITF", l:"MITF" },
+  { v:"MLH1", l:"MLH1" },
+  { v:"MPL", l:"MPL" },
+  { v:"MSH2", l:"MSH2" },
+  { v:"MSH3", l:"MSH3" },
+  { v:"MSH6", l:"MSH6" },
+  { v:"MTOR", l:"MTOR" },
+  { v:"MYC", l:"MYC" },
+  { v:"MYCL", l:"MYCL" },
+  { v:"MYCN", l:"MYCN" },
+  // N
+  { v:"NF1", l:"NF1" },
+  { v:"NF2", l:"NF2" },
+  { v:"NFE2L2 NRF2", l:"NFE2L2 / NRF2" },
+  { v:"NKX2-1", l:"NKX2-1" },
+  { v:"NOTCH1", l:"NOTCH1" },
+  { v:"NOTCH2", l:"NOTCH2" },
+  { v:"NOTCH3", l:"NOTCH3" },
+  { v:"NOTCH4", l:"NOTCH4" },
+  { v:"NRAS", l:"NRAS" },
+  { v:"NRG1 fusion", l:"NRG1 Fusion" },
+  { v:"NTRK1", l:"NTRK1" },
+  { v:"NTRK2", l:"NTRK2" },
+  { v:"NTRK3", l:"NTRK3" },
+  // P
+  { v:"PAK1", l:"PAK1" },
+  { v:"PALB2", l:"PALB2" },
+  { v:"PDGFRA", l:"PDGFRA" },
+  { v:"PDGFRB", l:"PDGFRB" },
+  { v:"PIK3CA", l:"PIK3CA" },
+  { v:"PIK3CB", l:"PIK3CB" },
+  { v:"PIK3CD", l:"PIK3CD" },
+  { v:"PIK3CG", l:"PIK3CG" },
+  { v:"PIK3R1", l:"PIK3R1" },
+  { v:"PIK3R2", l:"PIK3R2" },
+  { v:"PMS2", l:"PMS2" },
+  { v:"POLE", l:"POLE (polymerase epsilon)" },
+  { v:"PPP2R1A", l:"PPP2R1A" },
+  { v:"PRDM1", l:"PRDM1" },
+  { v:"PRKAR1A", l:"PRKAR1A" },
+  { v:"PTCH1", l:"PTCH1" },
+  { v:"PTEN", l:"PTEN" },
+  { v:"PTPN11", l:"PTPN11" },
+  // R
+  { v:"RAF1", l:"RAF1" },
+  { v:"RB1", l:"RB1" },
+  { v:"RBM10", l:"RBM10" },
+  { v:"RECQL4", l:"RECQL4" },
+  { v:"REL", l:"REL" },
+  { v:"RET", l:"RET" },
+  { v:"RET fusion", l:"RET Fusion" },
+  { v:"RICTOR", l:"RICTOR" },
+  { v:"RNF43", l:"RNF43" },
+  { v:"ROS1", l:"ROS1" },
+  { v:"RUNX1", l:"RUNX1" },
+  // S
+  { v:"SDHA", l:"SDHA" },
+  { v:"SDHAF2", l:"SDHAF2" },
+  { v:"SDHB", l:"SDHB" },
+  { v:"SDHC", l:"SDHC" },
+  { v:"SDHD", l:"SDHD" },
+  { v:"SETD2", l:"SETD2" },
+  { v:"SF3B1", l:"SF3B1" },
+  { v:"SMAD4", l:"SMAD4" },
+  { v:"SMARCA4", l:"SMARCA4" },
+  { v:"SMARCB1", l:"SMARCB1" },
+  { v:"SMARCE1", l:"SMARCE1" },
+  { v:"SMO", l:"SMO" },
+  { v:"SOCS1", l:"SOCS1" },
+  { v:"SOS1", l:"SOS1" },
+  { v:"SRC", l:"SRC" },
+  { v:"STK11", l:"STK11" },
+  { v:"SUFU", l:"SUFU" },
+  // T
+  { v:"TERT", l:"TERT" },
+  { v:"TET2", l:"TET2" },
+  { v:"TGFBR1", l:"TGFBR1" },
+  { v:"TGFBR2", l:"TGFBR2" },
+  { v:"TNFAIP3", l:"TNFAIP3" },
+  { v:"TP53", l:"TP53" },
+  { v:"TSC1", l:"TSC1" },
+  { v:"TSC2", l:"TSC2" },
+  // U
+  { v:"U2AF1", l:"U2AF1" },
+  { v:"USP6", l:"USP6" },
+  // V
+  { v:"VHL", l:"VHL" },
+  { v:"VTCN1", l:"VTCN1" },
+  // W
+  { v:"WT1", l:"WT1" },
+  // X
+  { v:"XPO1", l:"XPO1" },
 ];
 
-const PERIODS = [
-  { v: '1w',  label: '최근 1주일',  days: 7  },
-  { v: '2w',  label: '최근 2주일',  days: 14 },
-  { v: '1m',  label: '최근 1달',    days: 30 },
-  { v: '3m',  label: '최근 3달',    days: 90 },
+const US_STATES = [
+  { v:"", l:"All US States" },
+  { v:"Alabama", l:"Alabama (AL)" }, { v:"Alaska", l:"Alaska (AK)" },
+  { v:"Arizona", l:"Arizona (AZ)" }, { v:"Arkansas", l:"Arkansas (AR)" },
+  { v:"California", l:"California (CA)" }, { v:"Colorado", l:"Colorado (CO)" },
+  { v:"Connecticut", l:"Connecticut (CT)" }, { v:"Delaware", l:"Delaware (DE)" },
+  { v:"Florida", l:"Florida (FL)" }, { v:"Georgia", l:"Georgia (GA)" },
+  { v:"Hawaii", l:"Hawaii (HI)" }, { v:"Idaho", l:"Idaho (ID)" },
+  { v:"Illinois", l:"Illinois (IL)" }, { v:"Indiana", l:"Indiana (IN)" },
+  { v:"Iowa", l:"Iowa (IA)" }, { v:"Kansas", l:"Kansas (KS)" },
+  { v:"Kentucky", l:"Kentucky (KY)" }, { v:"Louisiana", l:"Louisiana (LA)" },
+  { v:"Maine", l:"Maine (ME)" }, { v:"Maryland", l:"Maryland (MD)" },
+  { v:"Massachusetts", l:"Massachusetts (MA)" }, { v:"Michigan", l:"Michigan (MI)" },
+  { v:"Minnesota", l:"Minnesota (MN)" }, { v:"Mississippi", l:"Mississippi (MS)" },
+  { v:"Missouri", l:"Missouri (MO)" }, { v:"Montana", l:"Montana (MT)" },
+  { v:"Nebraska", l:"Nebraska (NE)" }, { v:"Nevada", l:"Nevada (NV)" },
+  { v:"New Hampshire", l:"New Hampshire (NH)" }, { v:"New Jersey", l:"New Jersey (NJ)" },
+  { v:"New Mexico", l:"New Mexico (NM)" }, { v:"New York", l:"New York (NY)" },
+  { v:"North Carolina", l:"North Carolina (NC)" }, { v:"North Dakota", l:"North Dakota (ND)" },
+  { v:"Ohio", l:"Ohio (OH)" }, { v:"Oklahoma", l:"Oklahoma (OK)" },
+  { v:"Oregon", l:"Oregon (OR)" }, { v:"Pennsylvania", l:"Pennsylvania (PA)" },
+  { v:"Rhode Island", l:"Rhode Island (RI)" }, { v:"South Carolina", l:"South Carolina (SC)" },
+  { v:"South Dakota", l:"South Dakota (SD)" }, { v:"Tennessee", l:"Tennessee (TN)" },
+  { v:"Texas", l:"Texas (TX)" }, { v:"Utah", l:"Utah (UT)" },
+  { v:"Vermont", l:"Vermont (VT)" }, { v:"Virginia", l:"Virginia (VA)" },
+  { v:"Washington", l:"Washington (WA)" }, { v:"West Virginia", l:"West Virginia (WV)" },
+  { v:"Wisconsin", l:"Wisconsin (WI)" }, { v:"Wyoming", l:"Wyoming (WY)" },
+  { v:"District of Columbia", l:"Washington DC" },
 ];
 
-const COUNTRIES = [
-  { v: 'worldwide', label: '🌍 Worldwide' },
-  { v: 'US',        label: '🇺🇸 US' },
-  { v: 'Korea',     label: '🇰🇷 Korea' },
-  { v: 'China',     label: '🇨🇳 China' },
-  { v: 'Japan',     label: '🇯🇵 Japan' },
-  { v: 'India',     label: '🇮🇳 India' },
-  { v: 'UK',        label: '🇬🇧 UK' },
-  { v: 'Germany',   label: '🇩🇪 Germany' },
-  { v: 'Brazil',    label: '🇧🇷 Brazil' },
-  { v: 'Taiwan',    label: '🇹🇼 Taiwan' },
-  { v: 'Australia', label: '🇦🇺 Australia' },
-  { v: 'Canada',    label: '🇨🇦 Canada' },
-  { v: 'Vietnam',   label: '🇻🇳 Vietnam' },
-  { v: 'Singapore', label: '🇸🇬 Singapore' },
-];
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let activeCancer = CANCER_TYPES[0].v;
+let expandedCards = {};
+let allSitesShown = {};
 
-// ===================================================
-// STATE
-// ===================================================
-let state = {
-  sources:   new Set(SOURCES_CONFIG.map(s => s.id)),
-  keywords:  new Set(KEYWORDS.map(k => k.id)),
-  period:    '2w',
-  countries: new Set(['worldwide']),
-  rps:       3,
-  scanning:  false,
-  kwTab:     'all',
-};
-
-// ===================================================
-// INIT
-// ===================================================
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
 function init() {
-  renderSources();
-  renderKeywords();
-  renderPeriods();
-  renderCountries();
-  renderRPS();
-  updateSummary();
-  startClock();
-}
+  // Cancer pills
+  const cg = document.getElementById('cancerGrid');
+  CANCER_TYPES.forEach(ct => {
+    const b = document.createElement('button');
+    b.className = 'cancer-btn' + (ct.v === activeCancer ? ' active' : '');
+    b.innerHTML = ct.i + ' ' + ct.l;
+    b.onclick = () => { activeCancer = ct.v; renderCancerBtns(); };
+    cg.appendChild(b);
+  });
 
-function startClock() {
-  const tick = () => {
-    document.getElementById('hclock').textContent =
-      new Date().toLocaleTimeString('ko-KR') + ' KST';
-  };
-  tick();
-  setInterval(tick, 1000);
-}
+  // Mutation select
+  const ms = document.getElementById('mutationSel');
+  MUTATIONS.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m.v; o.textContent = m.l;
+    ms.appendChild(o);
+  });
 
-// ===================================================
-// RENDER SOURCES
-// ===================================================
-function renderSources() {
-  const row = document.getElementById('sources-row');
-  row.innerHTML = '';
-  SOURCES_CONFIG.forEach(src => {
-    const el = document.createElement('div');
-    el.className = 'src-chip' + (state.sources.has(src.id) ? ' on' : '');
-    el.id = 'src-' + src.id;
-    el.innerHTML = `<span class="src-dot"></span>${src.name}`;
-    el.onclick = () => {
-      toggle(state.sources, src.id);
-      el.classList.toggle('on', state.sources.has(src.id));
-      updateSummary();
-    };
-    row.appendChild(el);
+  // State select
+  const ss = document.getElementById('stateSel');
+  US_STATES.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.v; o.textContent = s.l;
+    ss.appendChild(o);
+  });
+
+  // Enter key
+  document.getElementById('keywordInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
   });
 }
 
-// ===================================================
-// RENDER KEYWORDS
-// ===================================================
-function renderKeywords() {
-  const body = document.getElementById('kw-body');
-  const tab = state.kwTab;
-  const filtered = tab === 'all' ? KEYWORDS : KEYWORDS.filter(k => k.cat === tab);
-
-  body.innerHTML = '';
-
-  // Select all / none
-  const selectAll = document.createElement('div');
-  selectAll.className = 'kw-select-all';
-  selectAll.textContent = '전체 선택/해제';
-  selectAll.onclick = () => {
-    const allOn = filtered.every(k => state.keywords.has(k.id));
-    filtered.forEach(k => allOn ? state.keywords.delete(k.id) : state.keywords.add(k.id));
-    renderKeywords();
-    updateSummary();
-  };
-  body.appendChild(selectAll);
-
-  filtered.forEach(kw => {
-    const el = document.createElement('div');
-    el.className = `kw-chip${state.keywords.has(kw.id) ? ' on' : ''}`;
-    el.dataset.cat = kw.cat;
-    el.textContent = kw.label;
-    el.onclick = () => {
-      toggle(state.keywords, kw.id);
-      el.classList.toggle('on', state.keywords.has(kw.id));
-      updateSummary();
-    };
-    body.appendChild(el);
-  });
-
-  // Update tab badges
-  document.querySelectorAll('.kw-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.cat === tab);
+function renderCancerBtns() {
+  document.querySelectorAll('.cancer-btn').forEach((b, i) => {
+    b.className = 'cancer-btn' + (CANCER_TYPES[i].v === activeCancer ? ' active' : '');
   });
 }
 
-document.querySelectorAll && document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.kw-tab').forEach(t => {
-    t.addEventListener('click', () => {
-      state.kwTab = t.dataset.cat;
-      renderKeywords();
+// ══════════════════════════════════════════════
+//  TOGGLE
+// ══════════════════════════════════════════════
+function toggleSwitch(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('on');
+}
+function isOn(id) { return document.getElementById(id).classList.contains('on'); }
+
+// ══════════════════════════════════════════════
+//  SEARCH
+// ══════════════════════════════════════════════
+async function doSearch() {
+  const btn = document.getElementById('searchBtn');
+  const mutation = document.getElementById('mutationSel').value;
+  const state = document.getElementById('stateSel').value;
+  const line = document.getElementById('lineSel').value;
+  const keyword = document.getElementById('keywordInput').value.trim();
+  const recruitOnly = isOn('recruitToggle');
+  const brainMets = isOn('brainToggle');
+
+  // Build query
+  const parts = [activeCancer];
+  if (mutation) parts.push(mutation);
+  if (line) parts.push(line);
+  if (brainMets) parts.push('brain metastasis');
+  if (keyword) parts.push(keyword);
+  const query = parts.join(' ');
+
+  // UI
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Searching ClinicalTrials.gov…';
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('resultHeader').style.display = 'none';
+  document.getElementById('resultsContainer').innerHTML = '';
+  document.getElementById('emptyState').style.display = 'none';
+  expandedCards = {}; allSitesShown = {};
+
+  try {
+    const statusFilter = recruitOnly
+      ? 'RECRUITING,NOT_YET_RECRUITING'
+      : 'RECRUITING,NOT_YET_RECRUITING,ACTIVE_NOT_RECRUITING';
+
+    const params = new URLSearchParams({
+      'query.term': query,
+      'query.locn': state ? state + ', United States' : 'United States',
+      'filter.overallStatus': statusFilter,
+      'pageSize': '30',
+      'format': 'json',
     });
-  });
-});
 
-// ===================================================
-// RENDER PERIODS
-// ===================================================
-function renderPeriods() {
-  const container = document.getElementById('period-btns');
-  container.innerHTML = '';
-  PERIODS.forEach(p => {
-    const el = document.createElement('div');
-    el.className = 'period-btn' + (state.period === p.v ? ' on' : '');
-    el.dataset.v = p.v;
-    el.textContent = p.label;
-    el.onclick = () => {
-      state.period = p.v;
-      container.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('on', b.dataset.v === p.v));
-      updateSummary();
-    };
-    container.appendChild(el);
-  });
-}
+    const res = await fetch('https://clinicaltrials.gov/api/v2/studies?' + params.toString());
+    if (!res.ok) throw new Error('ClinicalTrials.gov API error: ' + res.status);
+    const data = await res.json();
 
-// ===================================================
-// RENDER COUNTRIES
-// ===================================================
-function renderCountries() {
-  const container = document.getElementById('country-btns');
-  container.innerHTML = '';
-  COUNTRIES.forEach(c => {
-    const el = document.createElement('div');
-    el.className = 'country-btn' + (state.countries.has(c.v) ? ' on' : '');
-    el.dataset.v = c.v;
-    el.textContent = c.label;
-    el.onclick = () => {
-      if (c.v === 'worldwide') {
-        state.countries.clear();
-        state.countries.add('worldwide');
-      } else {
-        state.countries.delete('worldwide');
-        toggle(state.countries, c.v);
-        if (state.countries.size === 0) state.countries.add('worldwide');
-      }
-      container.querySelectorAll('.country-btn').forEach(b =>
-        b.classList.toggle('on', state.countries.has(b.dataset.v))
-      );
-      updateSummary();
-    };
-    container.appendChild(el);
-  });
-}
+    let studies = data.studies || [];
+    const totalCount = data.totalCount || studies.length;
 
-// ===================================================
-// RENDER RPS
-// ===================================================
-function renderRPS() {
-  document.querySelectorAll('.rps-btn').forEach(btn => {
-    btn.classList.toggle('on', parseInt(btn.dataset.v) === state.rps);
-    btn.onclick = () => {
-      state.rps = parseInt(btn.dataset.v);
-      document.querySelectorAll('.rps-btn').forEach(b => b.classList.toggle('on', b === btn));
-      updateSummary();
-    };
-  });
-}
+    // Filter: must have at least one US location
+    studies = studies.filter(s => {
+      const locs = s.protocolSection?.contactsLocationsModule?.locations || [];
+      return locs.some(l => l.country === 'United States');
+    });
 
-// ===================================================
-// SUMMARY
-// ===================================================
-function updateSummary() {
-  const srcCount = state.sources.size;
-  const kwCount  = state.keywords.size;
-  const period   = PERIODS.find(p => p.v === state.period)?.label || '';
-  const countries = [...state.countries].join(', ');
-  const total = srcCount * state.rps;
-
-  document.getElementById('scan-summary').innerHTML =
-    `<strong>${srcCount}</strong>개 사이트 &nbsp;·&nbsp; ` +
-    `<span class="s-green">${kwCount}</span>개 키워드 &nbsp;·&nbsp; ` +
-    `<span class="s-amber">${period}</span> &nbsp;·&nbsp; ` +
-    `<strong>${countries}</strong><br>` +
-    `예상 결과: 최대 <strong>${total}</strong>개 종목`;
-}
-
-// ===================================================
-// HELPERS
-// ===================================================
-function toggle(set, val) {
-  set.has(val) ? set.delete(val) : set.add(val);
-}
-
-function getPeriodDates(periodV) {
-  const days = PERIODS.find(p => p.v === periodV)?.days || 14;
-  const to = new Date();
-  const from = new Date(Date.now() - days * 86400000);
-  return {
-    from: from.toISOString().split('T')[0],
-    to:   to.toISOString().split('T')[0],
-    days,
-  };
-}
-
-// ===================================================
-// LOGGING
-// ===================================================
-function addLog(msg, type = '') {
-  const panel = document.getElementById('log-panel');
-  const inner = document.getElementById('log-inner');
-  panel.classList.add('show');
-  const line = document.createElement('div');
-  line.className = `log-line ${type}`;
-  line.innerHTML = `<span class="lt">[${new Date().toLocaleTimeString('ko-KR')}]</span> ${msg}`;
-  inner.appendChild(line);
-  inner.scrollTop = inner.scrollHeight;
-}
-
-function setProgress(pct, label) {
-  document.getElementById('prog-bar').style.width = pct + '%';
-  document.getElementById('prog-pct').textContent = Math.round(pct) + '%';
-  if (label) document.getElementById('prog-label').textContent = label;
-}
-
-// ===================================================
-// CLAUDE API
-// ===================================================
-async function fetchForSource(source) {
-  const { from, to, days } = getPeriodDates(state.period);
-  const kwLabels = KEYWORDS.filter(k => state.keywords.has(k.id)).map(k => k.label);
-  const countriesList = [...state.countries].join(', ');
-  const rps = state.rps;
-
-  // Build keyword string grouped by category
-  const valueKw     = kwLabels.filter(l => KEYWORDS.find(k=>k.label===l && k.cat==='value'));
-  const sentimentKw = kwLabels.filter(l => KEYWORDS.find(k=>k.label===l && k.cat==='sentiment'));
-  const catalystKw  = kwLabels.filter(l => KEYWORDS.find(k=>k.label===l && k.cat==='catalyst'));
-
-  const prompt = `You are a professional equity research analyst. Your task is to identify undervalued stocks mentioned on ${source.name} (${source.url}) in the last ${days} days (${from} to ${to}).
-
-SEARCH PARAMETERS:
-- Source: ${source.name} (${source.url})
-- Time range: ${from} to ${to} (last ${days} days)
-- Target markets: ${countriesList}
-- Number of stocks to find: EXACTLY ${rps}
-
-KEY SIGNAL KEYWORDS to search for (use combinations of these in your web search):
-📈 Value signals: ${valueKw.join(', ') || 'N/A'}
-💰 Sentiment signals: ${sentimentKw.join(', ') || 'N/A'}  
-🚀 Catalyst signals: ${catalystKw.join(', ') || 'N/A'}
-
-INSTRUCTIONS:
-1. Search ${source.url} for recent articles mentioning these signal keywords
-2. Find ${rps} specific stocks that appear undervalued based on the signals above
-3. For market filter "${countriesList}": only include stocks from those markets/exchanges
-4. Prioritize stocks where MULTIPLE signal types are present (e.g., earnings beat + analyst upgrade + buyback)
-
-For each stock provide:
-- ticker: Exchange:symbol format (e.g., NASDAQ:AAPL, KRX:005930)
-- name: Full company name
-- country: Country/Market
-- reason: 2-3 sentence analysis combining the signals found (mention specific keywords that triggered)
-- signals: array of matched keywords from the list above (max 4)
-- pe_ratio: if mentioned
-- price_target: analyst target if mentioned
-- upside: upside percentage if calculable
-- source_article: brief article title or topic from ${source.name}
-
-Respond ONLY in this exact JSON (no markdown fences, no text outside):
-{
-  "source": "${source.name}",
-  "period": "${from} ~ ${to}",
-  "country_filter": "${countriesList}",
-  "stocks": [
-    {
-      "ticker": "NASDAQ:AAPL",
-      "name": "Apple Inc.",
-      "country": "US",
-      "reason": "...",
-      "signals": ["earnings beat", "analyst upgrade"],
-      "pe_ratio": "24.5",
-      "price_target": "$220",
-      "upside": "+18%",
-      "source_article": "..."
+    // State filter client-side
+    if (state) {
+      studies = studies.filter(s => {
+        const locs = s.protocolSection?.contactsLocationsModule?.locations || [];
+        return locs.some(l => l.country === 'United States' && l.state === state);
+      });
     }
-  ]
-}`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1500,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
+    // Render
+    renderResults(studies, totalCount, state);
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-
-  const textBlocks = (data.content || []).filter(b => b.type === 'text');
-  const fullText = textBlocks.map(b => b.text).join('');
-
-  // Try to extract JSON
-  const match = fullText.match(/\{[\s\S]*"stocks"[\s\S]*\}/);
-  if (!match) throw new Error('응답에서 JSON 추출 실패');
-  return JSON.parse(match[0]);
+  } catch (e) {
+    const eb = document.getElementById('errorBox');
+    eb.textContent = '⚠️ ' + (e.message || 'Failed to fetch trials. Please try again.');
+    eb.style.display = 'block';
+    document.getElementById('emptyState').style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Search US Clinical Trials';
+  }
 }
 
-// ===================================================
-// RENDER RESULT BLOCK
-// ===================================================
-function renderResult(source, data, err = null) {
-  const container = document.getElementById('results-container');
-  const emptyState = container.querySelector('.empty-state');
-  if (emptyState) emptyState.remove();
+// ══════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════
+function renderResults(studies, totalCount, state) {
+  const rh = document.getElementById('resultHeader');
+  const rc = document.getElementById('resultCount');
+  rh.style.display = 'flex';
 
-  const existing = document.getElementById('result-' + source.id);
-  if (existing) existing.remove();
-
-  const block = document.createElement('div');
-  block.className = 'site-result';
-  block.id = 'result-' + source.id;
-
-  if (err) {
-    block.innerHTML = `
-      <div class="site-result-head">
-        <div class="site-name-group">
-          <div class="site-name">${source.name}</div>
-          <div class="site-meta">${source.url}</div>
-        </div>
-        <span class="badge badge-red">SCAN FAILED</span>
-      </div>
-      <div class="site-error">⚠ ${err}</div>`;
-    container.appendChild(block);
+  const ct = CANCER_TYPES.find(c => c.v === activeCancer);
+  if (studies.length === 0) {
+    rc.innerHTML = 'No trials found. Try broader filters.';
+    document.getElementById('emptyState').style.display = 'block';
     return;
   }
+  rc.innerHTML = `Found <strong>${studies.length} trial${studies.length > 1 ? 's' : ''}</strong>${totalCount > studies.length ? ' (of ~' + totalCount + ' API results)' : ''} with US sites${state ? ' in ' + state : ''} · ${ct ? ct.i + ' ' + ct.l : ''}`;
 
-  const stocks = data.stocks || [];
-  const period = data.period || '';
-  const countryF = data.country_filter || '';
+  const container = document.getElementById('resultsContainer');
+  studies.forEach((s, idx) => container.appendChild(buildCard(s, idx, state)));
+}
 
-  const stocksHtml = stocks.map((s, i) => {
-    const signalTags = (s.signals || []).map(sig => {
-      const kwObj = KEYWORDS.find(k => k.label === sig);
-      const cat = kwObj ? kwObj.cat : 'value';
-      return `<span class="signal-tag ${cat}">${sig}</span>`;
-    }).join('');
+function buildCard(trial, idx, state) {
+  const p = trial.protocolSection || {};
+  const id = p.identificationModule || {};
+  const statusMod = p.statusModule || {};
+  const desc = p.descriptionModule || {};
+  const elig = p.eligibilityModule || {};
+  const contacts = p.contactsLocationsModule || {};
+  const design = p.designModule || {};
+  const interventions = (p.armsInterventionsModule?.interventions || []);
+  const sponsors = p.sponsorCollaboratorsModule || {};
 
-    const metrics = [];
-    if (s.pe_ratio)     metrics.push({ k: 'P/E',     v: s.pe_ratio,     cls: 'neu' });
-    if (s.price_target) metrics.push({ k: '목표가',   v: s.price_target, cls: 'up'  });
-    if (s.upside)       metrics.push({ k: 'Upside',  v: s.upside,       cls: s.upside.startsWith('-') ? 'down' : 'up' });
-    if (s.country)      metrics.push({ k: '시장',    v: s.country,      cls: '' });
+  const nctId = id.nctId || 'N/A';
+  const title = id.briefTitle || 'No title';
+  const officialTitle = id.officialTitle || '';
+  const overallStatus = statusMod.overallStatus || 'UNKNOWN';
+  const phase = (design.phases || []).join(' / ');
+  const briefSummary = desc.briefSummary || '';
+  const criteria = elig.eligibilityCriteria || '';
+  const allLocs = contacts.locations || [];
+  const centralContacts = contacts.centralContacts || [];
+  const overallOfficials = contacts.overallOfficials || [];
 
-    const metricsHtml = metrics.map(m =>
-      `<div class="metric"><span class="metric-k">${m.k}</span><span class="metric-v ${m.cls}">${m.v}</span></div>`
-    ).join('');
+  const usLocs = allLocs.filter(l => l.country === 'United States');
+  const stateLocs = state ? usLocs.filter(l => l.state === state) : usLocs;
+  const recruitingSites = stateLocs.filter(l => l.status === 'RECRUITING').length;
 
-    return `
-      <div class="stock-card">
-        <div class="card-rank">PICK #${i+1} ${s.source_article ? '· ' + s.source_article.substring(0,40) + '…' : ''}</div>
-        <div class="card-ticker">${s.ticker || '—'}</div>
-        <div class="card-company">${s.name || ''}</div>
-        <div class="card-reason">${s.reason || ''}</div>
-        ${signalTags ? `<div class="card-signals">${signalTags}</div>` : ''}
-        ${metrics.length > 0 ? `<div class="card-metrics">${metricsHtml}</div>` : ''}
-      </div>`;
-  }).join('');
+  const drugs = interventions.filter(i => i.type === 'DRUG' || i.type === 'BIOLOGICAL').map(i => i.name).slice(0, 4);
+  const sponsor = sponsors.leadSponsor?.name || '';
 
-  block.innerHTML = `
-    <div class="site-result-head">
-      <div class="site-name-group">
-        <div class="site-name">${source.name}</div>
-        <div class="site-meta">${source.url} &nbsp;·&nbsp; ${period} &nbsp;·&nbsp; ${countryF}</div>
+  const hasBrainMets = /brain met|CNS met|intracranial|leptomeningeal/i.test(briefSummary + criteria + title + officialTitle);
+
+  const statusMap = {
+    RECRUITING: ['badge-recruiting', '● Recruiting'],
+    NOT_YET_RECRUITING: ['badge-notyet', '◌ Not Yet Recruiting'],
+    ACTIVE_NOT_RECRUITING: ['badge-active', '◆ Active, Not Recruiting'],
+    COMPLETED: ['badge-completed', '✓ Completed'],
+    TERMINATED: ['badge-terminated', '✕ Terminated'],
+  };
+  const [badgeCls, badgeTxt] = statusMap[overallStatus] || ['badge-completed', overallStatus];
+
+  const cardId = 'card_' + idx;
+  const detailId = 'detail_' + idx;
+
+  const div = document.createElement('div');
+  div.className = 'trial-card';
+  div.id = cardId;
+
+  div.innerHTML = `
+    <div class="trial-head">
+      <div class="trial-badges">
+        <a class="badge badge-nct" href="https://clinicaltrials.gov/study/${nctId}" target="_blank" rel="noreferrer">${nctId}</a>
+        <span class="badge ${badgeCls}">${badgeTxt}</span>
+        ${phase ? `<span class="badge badge-phase">${phase}</span>` : ''}
+        ${hasBrainMets ? `<span class="badge badge-brain">🧠 Brain Mets Mentioned</span>` : ''}
+        ${recruitingSites > 0 ? `<span class="badge badge-sites">🏥 ${recruitingSites} recruiting site${recruitingSites > 1 ? 's' : ''}${state ? ' in ' + state : ' (US)'}</span>` : ''}
       </div>
-      <div class="site-badges">
-        <span class="badge badge-green">✓ ${stocks.length} PICKS</span>
-        <span class="badge badge-accent">LIVE</span>
+      <div class="trial-title">${escHtml(title)}</div>
+      <div class="trial-meta">
+        ${sponsor ? `<span class="trial-sponsor">🏛 ${escHtml(sponsor)}</span>` : ''}
+        ${drugs.map(d => `<span class="trial-drug">${escHtml(d)}</span>`).join('')}
+      </div>
+      <div class="trial-summary">${escHtml(briefSummary.slice(0, 220))}${briefSummary.length > 220 ? '…' : ''}</div>
+      <div class="trial-actions">
+        <button class="btn-expand" id="btn_${idx}" onclick="toggleDetail('${detailId}', 'btn_${idx}')">▼ Details &amp; Sites</button>
+        <a class="btn-ctg" href="https://clinicaltrials.gov/study/${nctId}" target="_blank" rel="noreferrer">🔗 ClinicalTrials.gov ↗</a>
       </div>
     </div>
-    <div class="stocks-row">${stocksHtml || '<div style="padding:20px;color:var(--muted)">결과 없음</div>'}</div>`;
-
-  container.appendChild(block);
+    <div class="trial-detail" id="${detailId}">
+      ${buildDetailHTML(nctId, officialTitle, criteria, centralContacts, overallOfficials, stateLocs, state, idx)}
+    </div>
+  `;
+  return div;
 }
 
-// ===================================================
-// MAIN SCAN
-// ===================================================
-async function startScan() {
-  if (state.scanning) return;
-  if (state.sources.size === 0) { alert('최소 1개 소스를 선택하세요.'); return; }
-  if (state.keywords.size === 0) { alert('최소 1개 키워드를 선택하세요.'); return; }
+function buildDetailHTML(nctId, officialTitle, criteria, centralContacts, overallOfficials, stateLocs, state, idx) {
+  let html = '';
 
-  state.scanning = true;
-  const btn = document.getElementById('scan-btn');
-  btn.disabled = true;
-  btn.textContent = '◌ SCANNING…';
-
-  // Reset
-  document.getElementById('results-container').innerHTML = '';
-  document.getElementById('log-inner').innerHTML = '';
-  document.getElementById('progress-wrap').classList.add('show');
-  document.getElementById('log-panel').classList.add('show');
-  setProgress(0, '초기화...');
-
-  const sources = SOURCES_CONFIG.filter(s => state.sources.has(s.id));
-  let done = 0;
-  let ok = 0;
-
-  addLog(`🚀 UNDERVAULT v2 스캔 시작 — ${sources.length}개 소스`, 'info');
-  addLog(`키워드: ${[...state.keywords].length}개 · 기간: ${PERIODS.find(p=>p.v===state.period)?.label} · 국가: ${[...state.countries].join(', ')}`, 'info');
-
-  for (const src of sources) {
-    addLog(`▶ ${src.name} 스캔 중...`);
-    setProgress(done / sources.length * 100, `${src.name} 분석 중...`);
-
-    try {
-      const data = await fetchForSource(src);
-      renderResult(src, data);
-      ok++;
-      addLog(`✓ ${src.name} — ${data.stocks?.length || 0}개 종목 확인`, 'ok');
-    } catch(e) {
-      renderResult(src, null, e.message);
-      addLog(`✗ ${src.name} — ${e.message}`, 'err');
-    }
-
-    done++;
-    setProgress(done / sources.length * 100);
-    if (done < sources.length) await delay(1500);
+  // Contact info
+  const hasContacts = centralContacts.length > 0 || overallOfficials.length > 0;
+  if (hasContacts) {
+    html += `<div class="detail-section"><div class="detail-label">📞 Study Contacts</div><div class="contact-box">`;
+    centralContacts.slice(0, 2).forEach(c => {
+      html += `<div class="contact-item"><strong>${escHtml(c.name || '')}</strong>`;
+      if (c.role) html += ` · ${escHtml(c.role)}`;
+      if (c.phone) html += ` · 📱 ${escHtml(c.phone)}`;
+      if (c.email) html += ` · <a href="mailto:${escHtml(c.email)}">${escHtml(c.email)}</a>`;
+      html += `</div>`;
+    });
+    overallOfficials.slice(0, 1).forEach(o => {
+      html += `<div class="contact-item"><strong>PI:</strong> ${escHtml(o.name || '')}${o.affiliation ? ' · ' + escHtml(o.affiliation) : ''}</div>`;
+    });
+    html += `</div></div>`;
   }
 
-  setProgress(100, '완료');
+  // Eligibility
+  if (criteria) {
+    const display = criteria.length > 2200 ? criteria.slice(0, 2200) + '\n\n[See full criteria on ClinicalTrials.gov →]' : criteria;
+    html += `<div class="detail-section"><div class="detail-label">📋 Eligibility Criteria</div>
+      <div class="eligibility-box">${escHtml(display)}</div></div>`;
+  }
 
-  const ts = new Date().toLocaleString('ko-KR');
-  document.getElementById('res-badge').textContent = `${sources.length}개 소스 · ${ok}개 성공 · ${ts}`;
-  addLog(`🏁 스캔 완료 — ${ok}/${sources.length} 성공`, 'info');
+  // Sites
+  if (stateLocs.length > 0) {
+    html += `<div class="detail-section" style="padding-bottom:16px"><div class="detail-label">📍 US Sites (${stateLocs.length}${state ? ' in ' + state : ''})</div>
+      <div class="sites-grid" id="sitesGrid_${idx}">`;
+    stateLocs.slice(0, 6).forEach(loc => { html += buildSiteCard(loc); });
+    html += `</div>`;
+    if (stateLocs.length > 6) {
+      html += `<button class="btn-more" onclick="showMoreSites(${idx}, ${JSON.stringify(stateLocs).replace(/</g,'&lt;')})">▼ Show all ${stateLocs.length} sites</button>`;
+    }
+    html += `</div>`;
+  }
 
-  state.scanning = false;
-  btn.disabled = false;
-  btn.textContent = '↺ RE-SCAN';
+  return html;
 }
 
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function buildSiteCard(loc) {
+  const isRec = loc.status === 'RECRUITING';
+  const contact = (loc.contacts || [])[0];
+  return `<div class="site-card${isRec ? ' recruiting' : ''}">
+    <div class="site-name">${escHtml(loc.facility || 'Facility N/A')}</div>
+    <div class="site-location">${escHtml([loc.city, loc.state, 'USA'].filter(Boolean).join(', '))}</div>
+    ${isRec ? `<div class="site-status">● Recruiting</div>` : ''}
+    ${contact ? `<div class="site-contact">${contact.name ? `<strong>${escHtml(contact.name)}</strong>` : ''}${contact.phone ? ` · 📱 ${escHtml(contact.phone)}` : ''}${contact.email ? ` · <a href="mailto:${escHtml(contact.email)}">${escHtml(contact.email)}</a>` : ''}</div>` : ''}
+  </div>`;
+}
 
-// ===================================================
-// BOOT
-// ===================================================
-window.addEventListener('DOMContentLoaded', () => {
-  init();
+function showMoreSites(idx, locs) {
+  const grid = document.getElementById('sitesGrid_' + idx);
+  grid.innerHTML = locs.map(buildSiteCard).join('');
+  event.target.style.display = 'none';
+}
 
-  // Attach tab listeners after DOM ready
-  document.querySelectorAll('.kw-tab').forEach(t => {
-    t.addEventListener('click', () => {
-      state.kwTab = t.dataset.cat;
-      renderKeywords();
-    });
-  });
-});
+function toggleDetail(detailId, btnId) {
+  const detail = document.getElementById(detailId);
+  const btn = document.getElementById(btnId);
+  const isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open');
+  btn.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? '▼ Details & Sites' : '▲ Collapse';
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════
+init();
 </script>
 </body>
 </html>
