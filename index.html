@@ -653,6 +653,7 @@ const US_STATES = [
 let activeCancer = CANCER_TYPES[0].v;
 let expandedCards = {};
 let allSitesShown = {};
+const SITES_STORE = {};   // global store: idx -> array of loc objects
 
 // ══════════════════════════════════════════════
 //  INIT
@@ -708,6 +709,8 @@ function isOn(id) { return document.getElementById(id).classList.contains('on');
 // ══════════════════════════════════════════════
 //  SEARCH
 // ══════════════════════════════════════════════
+const MAX_PAGES = 10;   // up to 10 × 50 = 500 trials max
+
 async function doSearch() {
   const btn = document.getElementById('searchBtn');
   const mutation = document.getElementById('mutationSel').value;
@@ -725,51 +728,79 @@ async function doSearch() {
   if (keyword) parts.push(keyword);
   const query = parts.join(' ');
 
+  // Detect SCLC search → will exclude "non-small cell" titles
+  const isSCLC = /small cell lung/i.test(activeCancer) && !/non-small/i.test(activeCancer);
+
   // UI
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Searching ClinicalTrials.gov…';
+  btn.innerHTML = '<span class="spinner"></span>Fetching page 1…';
   document.getElementById('errorBox').style.display = 'none';
   document.getElementById('resultHeader').style.display = 'none';
   document.getElementById('resultsContainer').innerHTML = '';
   document.getElementById('emptyState').style.display = 'none';
   expandedCards = {}; allSitesShown = {};
+  // Clear sites store
+  for (const k in SITES_STORE) delete SITES_STORE[k];
 
   try {
     const statusFilter = recruitOnly
       ? 'RECRUITING,NOT_YET_RECRUITING'
       : 'RECRUITING,NOT_YET_RECRUITING,ACTIVE_NOT_RECRUITING';
 
-    const params = new URLSearchParams({
-      'query.term': query,
-      'query.locn': state ? state + ', United States' : 'United States',
-      'filter.overallStatus': statusFilter,
-      'pageSize': '30',
-      'format': 'json',
-    });
+    let allStudies = [];
+    let nextToken = null;
+    let totalCount = 0;
+    let page = 0;
 
-    const res = await fetch('https://clinicaltrials.gov/api/v2/studies?' + params.toString());
-    if (!res.ok) throw new Error('ClinicalTrials.gov API error: ' + res.status);
-    const data = await res.json();
+    // Paginate through ALL results
+    do {
+      page++;
+      btn.innerHTML = `<span class="spinner"></span>Fetching page ${page}…`;
 
-    let studies = data.studies || [];
-    const totalCount = data.totalCount || studies.length;
+      const params = new URLSearchParams({
+        'query.term': query,
+        'query.locn': state ? state + ', United States' : 'United States',
+        'filter.overallStatus': statusFilter,
+        'pageSize': '50',
+        'format': 'json',
+      });
+      if (nextToken) params.set('pageToken', nextToken);
 
-    // Filter: must have at least one US location
-    studies = studies.filter(s => {
+      const res = await fetch('https://clinicaltrials.gov/api/v2/studies?' + params.toString());
+      if (!res.ok) throw new Error('ClinicalTrials.gov API error: ' + res.status);
+      const data = await res.json();
+
+      if (page === 1) totalCount = data.totalCount || 0;
+      allStudies = allStudies.concat(data.studies || []);
+      nextToken = data.nextPageToken || null;
+
+    } while (nextToken && page < MAX_PAGES);
+
+    // ── Filter 1: must have at least one US location
+    allStudies = allStudies.filter(s => {
       const locs = s.protocolSection?.contactsLocationsModule?.locations || [];
       return locs.some(l => l.country === 'United States');
     });
 
-    // State filter client-side
+    // ── Filter 2: state filter client-side
     if (state) {
-      studies = studies.filter(s => {
+      allStudies = allStudies.filter(s => {
         const locs = s.protocolSection?.contactsLocationsModule?.locations || [];
         return locs.some(l => l.country === 'United States' && l.state === state);
       });
     }
 
+    // ── Filter 3: SCLC → exclude trials with "non-small cell" / "NSCLC" in title
+    if (isSCLC) {
+      allStudies = allStudies.filter(s => {
+        const title = (s.protocolSection?.identificationModule?.briefTitle || '').toLowerCase();
+        const offTitle = (s.protocolSection?.identificationModule?.officialTitle || '').toLowerCase();
+        return !/(non-small.cell|non small.cell|nsclc)/i.test(title + ' ' + offTitle);
+      });
+    }
+
     // Render
-    renderResults(studies, totalCount, state);
+    renderResults(allStudies, totalCount, state, page);
 
   } catch (e) {
     const eb = document.getElementById('errorBox');
@@ -785,7 +816,7 @@ async function doSearch() {
 // ══════════════════════════════════════════════
 //  RENDER
 // ══════════════════════════════════════════════
-function renderResults(studies, totalCount, state) {
+function renderResults(studies, totalCount, state, pages) {
   const rh = document.getElementById('resultHeader');
   const rc = document.getElementById('resultCount');
   rh.style.display = 'flex';
@@ -796,7 +827,8 @@ function renderResults(studies, totalCount, state) {
     document.getElementById('emptyState').style.display = 'block';
     return;
   }
-  rc.innerHTML = `Found <strong>${studies.length} trial${studies.length > 1 ? 's' : ''}</strong>${totalCount > studies.length ? ' (of ~' + totalCount + ' API results)' : ''} with US sites${state ? ' in ' + state : ''} · ${ct ? ct.i + ' ' + ct.l : ''}`;
+  const pageNote = pages > 1 ? ` · ${pages} pages fetched` : '';
+  rc.innerHTML = `Found <strong>${studies.length} trial${studies.length > 1 ? 's' : ''}</strong>${totalCount > studies.length ? ' (of ~' + totalCount + ' total)' : ''} with US sites${state ? ' in ' + state : ''}${pageNote} · ${ct ? ct.i + ' ' + ct.l : ''}`;
 
   const container = document.getElementById('resultsContainer');
   studies.forEach((s, idx) => container.appendChild(buildCard(s, idx, state)));
@@ -905,12 +937,13 @@ function buildDetailHTML(nctId, officialTitle, criteria, centralContacts, overal
 
   // Sites
   if (stateLocs.length > 0) {
+    SITES_STORE[idx] = stateLocs;   // store for "show more" button
     html += `<div class="detail-section" style="padding-bottom:16px"><div class="detail-label">📍 US Sites (${stateLocs.length}${state ? ' in ' + state : ''})</div>
       <div class="sites-grid" id="sitesGrid_${idx}">`;
     stateLocs.slice(0, 6).forEach(loc => { html += buildSiteCard(loc); });
     html += `</div>`;
     if (stateLocs.length > 6) {
-      html += `<button class="btn-more" onclick="showMoreSites(${idx}, ${JSON.stringify(stateLocs).replace(/</g,'&lt;')})">▼ Show all ${stateLocs.length} sites</button>`;
+      html += `<button class="btn-more" id="moreBtn_${idx}" onclick="showMoreSites(${idx})">▼ Show all ${stateLocs.length} sites</button>`;
     }
     html += `</div>`;
   }
@@ -929,10 +962,12 @@ function buildSiteCard(loc) {
   </div>`;
 }
 
-function showMoreSites(idx, locs) {
+function showMoreSites(idx) {
+  const locs = SITES_STORE[idx] || [];
   const grid = document.getElementById('sitesGrid_' + idx);
-  grid.innerHTML = locs.map(buildSiteCard).join('');
-  event.target.style.display = 'none';
+  if (grid) grid.innerHTML = locs.map(buildSiteCard).join('');
+  const btn = document.getElementById('moreBtn_' + idx);
+  if (btn) btn.style.display = 'none';
 }
 
 function toggleDetail(detailId, btnId) {
